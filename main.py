@@ -15,6 +15,14 @@ class FetchItem(BaseModel):
     filepath: str
 
 
+class DownloadItem(BaseModel):
+    filepath: str
+
+
+class CheckItem(BaseModel):
+    filepath: str
+
+
 @app.post("/fetch")
 def fetch(item: FetchItem):
     r = requests.get(url=item.url)
@@ -27,13 +35,25 @@ def fetch(item: FetchItem):
     return {"is_ok": True}
 
 
-@app.get("/download/{file_path:path}")
-async def download_file(file_path: str):
+@app.post("/download/{file_path:path}")
+async def download_file(download: DownloadItem):
     """
     文件下载
-    :param file_path:
     :return:
     """
-    file_location = os.path.join(base_dir, file_path)
+    file_location = os.path.join(base_dir, download.filepath)
     filename = os.path.basename(file_location)
-    return FileResponse(file_location, filename=filename)
+    if os.path.exists(filename):
+        return FileResponse(file_location, filename=filename)
+    else:
+        return {"status": 400, "msg": "file not found!", "data": {}}
+
+
+@app.post("/check")
+async def check(check_item: CheckItem):
+    """
+    文件检查
+    :return:
+    """
+    file_location = os.path.join(base_dir, check_item.filepath)
+    return {"status": 200, "data": {"exist": os.path.exists(file_location)}, "msg": "success"}

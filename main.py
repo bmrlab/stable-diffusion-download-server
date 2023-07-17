@@ -66,8 +66,9 @@ async def check(check_item: CheckItem):
 
 @app.post("/symlink")
 def set_symlink(s: Symlink):
-    if os.path.exists(s.source):
-        os.symlink(s.source, s.symlink)
+    file_location = os.path.join(base_dir, s.source)
+    if os.path.exists(file_location):
+        os.symlink(file_location, s.symlink)
         return {"status": 200, "data": {}, "msg": "success"}
     else:
         return {"status": 400, "msg": "file not found!", "data": {}}

@@ -23,6 +23,10 @@ class CheckItem(BaseModel):
     filepath: str
 
 
+class RemoveItem(BaseModel):
+    filepath: str
+
+
 class Symlink(BaseModel):
     source: str
     symlink: str
@@ -66,10 +70,30 @@ async def check(check_item: CheckItem):
 
 @app.post("/symlink")
 def set_symlink(s: Symlink):
+    """
+    创建软连接
+    :param s:
+    :return:
+    """
     file_location = os.path.join(base_dir, s.source)
     symlink_location = os.path.join(base_dir, s.symlink)
     if os.path.exists(file_location):
+        if os.path.exists(symlink_location):
+            os.remove(symlink_location)
         os.symlink(file_location, symlink_location)
         return {"status": 200, "data": {}, "msg": "success"}
     else:
         return {"status": 400, "msg": "file not found!", "data": {}}
+
+
+@app.delete("/remove")
+def rm_file(item: RemoveItem):
+    """
+    文件删除
+    :param item:
+    :return:
+    """
+    file_location = os.path.join(base_dir, item.filepath)
+    if os.path.exists(file_location):
+        os.remove(file_location)
+    return {"status": 200, "data": {}, "msg": "success"}

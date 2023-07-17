@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.responses import FileResponse
 import requests
 import logging
+import shutil
 
 app = FastAPI()
 
@@ -30,6 +31,11 @@ class RemoveItem(BaseModel):
 class Symlink(BaseModel):
     source: str
     symlink: str
+
+
+class CopyItem(BaseModel):
+    source: str
+    target: str
 
 
 @app.post("/fetch")
@@ -73,6 +79,22 @@ async def check(check_item: CheckItem):
             },
         "msg": "success"
     }
+
+
+@app.post("/copy")
+def copy_file(item: CopyItem):
+    """
+    创建copy
+    :param item:
+    :return:
+    """
+    src = os.path.join(base_dir, item.source)
+    target = os.path.join(base_dir, item.target)
+    if os.path.exists(src):
+        if os.path.exists(target) or os.path.islink(target):
+            os.remove(target)
+        shutil.copy(src, target)
+    return {"status": 200, "data": {}, "msg": "success"}
 
 
 @app.post("/symlink")

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 import requests
+import shutil
 import logging
 
 app = FastAPI()
@@ -78,7 +79,7 @@ def set_symlink(s: Symlink):
     file_location = os.path.join(base_dir, s.source)
     symlink_location = os.path.join(base_dir, s.symlink)
     if os.path.exists(file_location):
-        if os.path.exists(symlink_location):
+        if os.path.exists(symlink_location) or os.path.islink(symlink_location):
             os.remove(symlink_location)
         os.symlink(file_location, symlink_location)
         return {"status": 200, "data": {}, "msg": "success"}

@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 import requests
-import shutil
 import logging
 
 app = FastAPI()
@@ -66,7 +65,14 @@ async def check(check_item: CheckItem):
     :return:
     """
     file_location = os.path.join(base_dir, check_item.filepath)
-    return {"status": 200, "data": {"exist": os.path.exists(file_location)}, "msg": "success"}
+    return {
+        "status":
+            200, "data":
+            {
+                "exist": os.path.exists(file_location) or os.path.islink(file_location)
+            },
+        "msg": "success"
+    }
 
 
 @app.post("/symlink")

@@ -23,6 +23,11 @@ class CheckItem(BaseModel):
     filepath: str
 
 
+class Symlink(BaseModel):
+    source: str
+    symlink: str
+
+
 @app.post("/fetch")
 def fetch(item: FetchItem):
     r = requests.get(url=item.url)
@@ -57,3 +62,12 @@ async def check(check_item: CheckItem):
     """
     file_location = os.path.join(base_dir, check_item.filepath)
     return {"status": 200, "data": {"exist": os.path.exists(file_location)}, "msg": "success"}
+
+
+@app.post("/symlink")
+def set_symlink(s: Symlink):
+    if os.path.exists(s.source):
+        os.symlink(s.source, s.symlink)
+        return {"status": 200, "data": {}, "msg": "success"}
+    else:
+        return {"status": 400, "msg": "file not found!", "data": {}}

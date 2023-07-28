@@ -72,6 +72,11 @@ class CopyItem(BaseModel):
     target: str
 
 
+@app.get("/")
+def health_check_view():
+    return {"status": "ok"}
+
+
 @app.post("/fetch")
 def fetch(item: FetchItem):
     r = requests.get(url=item.url)

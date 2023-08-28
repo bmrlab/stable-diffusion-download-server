@@ -79,13 +79,23 @@ def health_check_view():
 
 @app.post("/fetch")
 def fetch(item: FetchItem):
-    r = requests.get(url=item.url)
-    logging.info(f"start download: {item}")
+    r = requests.get(url=item.url, stream=True)
+    content_length: int = int(r.headers["Content-Length"])
+    chunk_size = 8192
+    write_length = 0
+    logging.info(f"start download: {item} content_length: {content_length}")
     if r.ok:
         d = os.path.join(base_dir, os.path.dirname(item.filepath))
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, os.path.basename(item.filepath)), 'wb') as f:
-            f.write(r.content)
+            step = 0
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+                write_length += chunk_size
+                step += 1
+                if step % 1024 == 0:
+                    # 打印进度
+                    logging.info(f"progress: {write_length / content_length:.2%}")
     return {"is_ok": True}
 
 

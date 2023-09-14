@@ -1,6 +1,11 @@
 name: File Download Server
 
-on: workflow_dispatch
+on:
+  push:
+    # branches: [ "main" ]
+    tags:
+      - v*
+  workflow_dispatch: {}
 
 jobs:
   build:
@@ -22,8 +27,9 @@ jobs:
     - name: setup versioning
       id: vars
       run: |
-        build_version="$(git rev-parse --short HEAD)"
-        echo "build_version=$build_version" >> $GITHUB_OUTPUT
+        commit_short_hash="$(git rev-parse --short HEAD)"
+        echo "commit_short_hash=$commit_short_hash" >> $GITHUB_OUTPUT
+        echo "build_version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
     - name: Build and push File Download Server
       uses: docker/build-push-action@v4
@@ -33,5 +39,20 @@ jobs:
         push: true
         tags: |
           ghcr.io/bmrlab/stable-diffusion-webui/dl-server:latest
+          ghcr.io/bmrlab/stable-diffusion-webui/dl-server:${{ steps.vars.outputs.commit_short_hash }}
           ghcr.io/bmrlab/stable-diffusion-webui/dl-server:${{ steps.vars.outputs.build_version }}
         platforms: linux/amd64
+
+    - name: Install kubectl
+      uses: azure/k8s-set-context@v1
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG_AKS_MUSE_TEST }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/download-server download-server=ghcr.io/bmrlab/stable-diffusion-webui/dl-server:${{ steps.vars.outputs.build_version }} -n stable-diffusion
+
+    - name: Verify Kubernetes deployment
+      run: |
+        kubectl rollout status deploy download-server -n stable-diffusion
